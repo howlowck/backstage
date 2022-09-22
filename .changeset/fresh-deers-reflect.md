@@ -32,9 +32,9 @@ export async function createRouter(
   let taskBroker: TaskBroker;
   if (!options.taskBroker) {
     ...
--   taskBroker = new StorageTaskBroker(databaseTaskStore, logger);    
+-   taskBroker = new StorageTaskBroker(databaseTaskStore, logger);
 +   taskBroker = new StorageTaskBroker(databaseTaskStore, logger, emitter);
-  } 
+  }
 
   ...
   const workers = [];
@@ -49,7 +49,7 @@ export async function createRouter(
 }
 ```
 
----------
+---
 
 TaskWorker has a new `listen` method that is non-blocking.
 
@@ -68,7 +68,7 @@ export async function createRouter(
 }
 ```
 
----------
+---
 
 A new `stress:waitWorkflow` action is added to builtin actions
 
