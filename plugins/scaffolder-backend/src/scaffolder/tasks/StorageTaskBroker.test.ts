@@ -52,14 +52,12 @@ describe('StorageTaskBroker', () => {
 
   const logger = getVoidLogger();
   it('should claim a dispatched work item', async () => {
-    const eventEmitter = new EventEmitter();
     const broker = new StorageTaskBroker(storage, logger, eventEmitter);
     await broker.dispatch({ spec: {} as TaskSpec });
     await expect(broker.claim()).resolves.toEqual(expect.any(TaskManager));
   });
 
   it('should wait for a dispatched work item', async () => {
-    const eventEmitter = new EventEmitter();
     const broker = new StorageTaskBroker(storage, logger, eventEmitter);
     const promise = broker.claim();
 
@@ -70,7 +68,6 @@ describe('StorageTaskBroker', () => {
   });
 
   it('should dispatch multiple items and claim them in order', async () => {
-    const eventEmitter = new EventEmitter();
     const broker = new StorageTaskBroker(storage, logger, eventEmitter);
     await broker.dispatch({ spec: { steps: [{ id: 'a' }] } as TaskSpec });
     await broker.dispatch({ spec: { steps: [{ id: 'b' }] } as TaskSpec });
