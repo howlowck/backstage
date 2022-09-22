@@ -12,6 +12,7 @@ import { CatalogProcessorEmit } from '@backstage/plugin-catalog-backend';
 import { Config } from '@backstage/config';
 import { createPullRequest } from 'octokit-plugin-create-pull-request';
 import { Entity } from '@backstage/catalog-model';
+import EventEmitter from 'events';
 import express from 'express';
 import { GithubCredentialsProvider } from '@backstage/integration';
 import { IdentityApi } from '@backstage/plugin-auth-node';
@@ -448,6 +449,7 @@ export type CreateWorkerOptions = {
   workingDirectory: string;
   logger: Logger;
   additionalTemplateFilters?: Record<string, TemplateFilter>;
+  eventEmitter: EventEmitter;
 };
 
 // @public
@@ -543,6 +545,8 @@ export interface RouterOptions {
   config: Config;
   // (undocumented)
   database: PluginDatabaseManager;
+  // (undocumented)
+  eventEmitter?: EventEmitter;
   // (undocumented)
   identity?: IdentityApi;
   // (undocumented)
@@ -783,6 +787,8 @@ export type TaskStoreShutDownTaskOptions = {
 export class TaskWorker {
   // (undocumented)
   static create(options: CreateWorkerOptions): Promise<TaskWorker>;
+  // (undocumented)
+  listen(): void;
   // (undocumented)
   runOneTask(task: TaskContext): Promise<void>;
   // (undocumented)
