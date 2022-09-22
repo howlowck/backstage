@@ -25,6 +25,7 @@ import { ConfigReader } from '@backstage/config';
 import { TemplateEntityV1beta3 } from '@backstage/plugin-scaffolder-common';
 import express from 'express';
 import request from 'supertest';
+import EventEmitter from 'events';
 import ObservableImpl from 'zen-observable';
 
 /**
@@ -137,7 +138,14 @@ describe('createRouter', () => {
       const databaseTaskStore = await DatabaseTaskStore.create({
         database: createDatabase(),
       });
-      taskBroker = new StorageTaskBroker(databaseTaskStore, logger);
+
+      const eventEmitter = new EventEmitter();
+
+      taskBroker = new StorageTaskBroker(
+        databaseTaskStore,
+        logger,
+        eventEmitter,
+      );
 
       jest.spyOn(taskBroker, 'dispatch');
       jest.spyOn(taskBroker, 'get');
@@ -719,7 +727,14 @@ data: {"id":1,"taskId":"a-random-id","type":"completion","createdAt":"","body":{
       const databaseTaskStore = await DatabaseTaskStore.create({
         database: createDatabase(),
       });
-      taskBroker = new StorageTaskBroker(databaseTaskStore, logger);
+
+      const eventEmitter = new EventEmitter();
+
+      taskBroker = new StorageTaskBroker(
+        databaseTaskStore,
+        logger,
+        eventEmitter,
+      );
 
       jest.spyOn(taskBroker, 'dispatch');
       jest.spyOn(taskBroker, 'get');

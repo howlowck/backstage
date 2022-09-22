@@ -21,6 +21,7 @@ import { TemplateActionRegistry } from '../actions';
 import { ScmIntegrations } from '@backstage/integration';
 import { assertError } from '@backstage/errors';
 import { TemplateFilter } from '../../lib/templating/SecureTemplater';
+import EventEmitter from 'events';
 
 /**
  * TaskWorkerOptions
@@ -32,6 +33,7 @@ export type TaskWorkerOptions = {
   runners: {
     workflowRunner: WorkflowRunner;
   };
+  eventEmitter: EventEmitter;
 };
 
 /**
@@ -46,6 +48,7 @@ export type CreateWorkerOptions = {
   workingDirectory: string;
   logger: Logger;
   additionalTemplateFilters?: Record<string, TemplateFilter>;
+  eventEmitter: EventEmitter;
 };
 
 /**
@@ -64,6 +67,7 @@ export class TaskWorker {
       integrations,
       workingDirectory,
       additionalTemplateFilters,
+      eventEmitter,
     } = options;
 
     const workflowRunner = new NunjucksWorkflowRunner({
@@ -77,6 +81,7 @@ export class TaskWorker {
     return new TaskWorker({
       taskBroker: taskBroker,
       runners: { workflowRunner },
+      eventEmitter,
     });
   }
 
@@ -87,6 +92,15 @@ export class TaskWorker {
         await this.runOneTask(task);
       }
     })();
+  }
+
+  listen() {
+    this.options.eventEmitter.on('storageTaskBroker:newTask', () => {
+      this.options.taskBroker.claim().then(task => {
+        this.runOneTask(task);
+      });
+    });
+    console.log('Started listening for new tasks');
   }
 
   async runOneTask(task: TaskContext) {

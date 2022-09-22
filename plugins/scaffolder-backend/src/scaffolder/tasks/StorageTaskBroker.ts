@@ -27,6 +27,7 @@ import {
   SerializedTask,
 } from './types';
 import { TaskBrokerDispatchOptions } from '.';
+import EventEmitter from 'events';
 
 /**
  * TaskManager
@@ -149,6 +150,7 @@ export class StorageTaskBroker implements TaskBroker {
   constructor(
     private readonly storage: TaskStore,
     private readonly logger: Logger,
+    private readonly eventEmitter: EventEmitter,
   ) {}
 
   async list(options?: {
@@ -194,7 +196,9 @@ export class StorageTaskBroker implements TaskBroker {
     options: TaskBrokerDispatchOptions,
   ): Promise<{ taskId: string }> {
     const taskRow = await this.storage.createTask(options);
-    this.signalDispatch();
+    this.signalDispatch({
+      taskId: taskRow.taskId,
+    });
     return {
       taskId: taskRow.taskId,
     };
@@ -266,8 +270,9 @@ export class StorageTaskBroker implements TaskBroker {
     return this.deferredDispatch.promise;
   }
 
-  private signalDispatch() {
+  private signalDispatch(value: { taskId: string }) {
     this.deferredDispatch.resolve();
     this.deferredDispatch = defer();
+    this.eventEmitter.emit('storageTaskBroker:newTask', value);
   }
 }

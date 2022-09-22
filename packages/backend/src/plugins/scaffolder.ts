@@ -18,6 +18,7 @@ import { CatalogClient } from '@backstage/catalog-client';
 import { createRouter } from '@backstage/plugin-scaffolder-backend';
 import { Router } from 'express';
 import type { PluginEnvironment } from '../types';
+import EventEmitter from 'events';
 
 export default async function createPlugin(
   env: PluginEnvironment,
@@ -25,6 +26,8 @@ export default async function createPlugin(
   const catalogClient = new CatalogClient({
     discoveryApi: env.discovery,
   });
+
+  const eventEmitter = new EventEmitter();
 
   return await createRouter({
     logger: env.logger,
@@ -34,5 +37,6 @@ export default async function createPlugin(
     reader: env.reader,
     identity: env.identity,
     scheduler: env.scheduler,
+    eventEmitter: eventEmitter,
   });
 }

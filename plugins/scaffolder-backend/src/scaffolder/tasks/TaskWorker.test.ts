@@ -22,6 +22,7 @@ import { TaskWorker } from './TaskWorker';
 import { ScmIntegrations } from '@backstage/integration';
 import { TemplateActionRegistry } from '../actions';
 import { NunjucksWorkflowRunner } from './NunjucksWorkflowRunner';
+import EventEmitter from 'events';
 
 jest.mock('./NunjucksWorkflowRunner');
 const MockedNunjucksWorkflowRunner =
@@ -68,13 +69,15 @@ describe('TaskWorker', () => {
   const logger = getVoidLogger();
 
   it('should call the default workflow runner when the apiVersion is beta3', async () => {
-    const broker = new StorageTaskBroker(storage, logger);
+    const eventEmitter = new EventEmitter();
+    const broker = new StorageTaskBroker(storage, logger, eventEmitter);
     const taskWorker = await TaskWorker.create({
       logger,
       workingDirectory,
       integrations,
       taskBroker: broker,
       actionRegistry,
+      eventEmitter,
     });
 
     await broker.dispatch({
@@ -98,14 +101,15 @@ describe('TaskWorker', () => {
     (workflowRunner.execute as jest.Mock).mockResolvedValue({
       output: { testOutput: 'testmockoutput' },
     });
-
-    const broker = new StorageTaskBroker(storage, logger);
+    const eventEmitter = new EventEmitter();
+    const broker = new StorageTaskBroker(storage, logger, eventEmitter);
     const taskWorker = await TaskWorker.create({
       logger,
       workingDirectory,
       integrations,
       taskBroker: broker,
       actionRegistry,
+      eventEmitter,
     });
 
     const { taskId } = await broker.dispatch({

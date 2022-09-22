@@ -53,6 +53,8 @@ import {
   IdentityApiGetIdentityRequest,
 } from '@backstage/plugin-auth-node';
 
+import EventEmitter from 'events';
+
 /**
  * RouterOptions
  *
@@ -71,6 +73,7 @@ export interface RouterOptions {
   taskBroker?: TaskBroker;
   additionalTemplateFilters?: Record<string, TemplateFilter>;
   identity?: IdentityApi;
+  eventEmitter?: EventEmitter;
 }
 
 function isSupportedTemplate(entity: TemplateEntityV1beta3) {
@@ -160,9 +163,12 @@ export async function createRouter(
     taskWorkers,
     scheduler,
     additionalTemplateFilters,
+    eventEmitter,
   } = options;
 
   const logger = parentLogger.child({ plugin: 'scaffolder' });
+
+  const emitter = eventEmitter ?? new EventEmitter();
 
   const identity: IdentityApi =
     options.identity || buildDefaultIdentityClient({ logger });
@@ -173,7 +179,7 @@ export async function createRouter(
   let taskBroker: TaskBroker;
   if (!options.taskBroker) {
     const databaseTaskStore = await DatabaseTaskStore.create({ database });
-    taskBroker = new StorageTaskBroker(databaseTaskStore, logger);
+    taskBroker = new StorageTaskBroker(databaseTaskStore, logger, emitter);
 
     if (scheduler && databaseTaskStore.listStaleTasks) {
       await scheduler.scheduleTask({
@@ -199,7 +205,7 @@ export async function createRouter(
   const actionRegistry = new TemplateActionRegistry();
 
   const workers = [];
-  for (let i = 0; i < (taskWorkers || 3); i++) {
+  for (let i = 0; i < (taskWorkers || 1); i++) {
     const worker = await TaskWorker.create({
       taskBroker,
       actionRegistry,
@@ -207,6 +213,7 @@ export async function createRouter(
       logger,
       workingDirectory,
       additionalTemplateFilters,
+      eventEmitter: emitter,
     });
     workers.push(worker);
   }
@@ -222,7 +229,7 @@ export async function createRouter(
       });
 
   actionsToRegister.forEach(action => actionRegistry.register(action));
-  workers.forEach(worker => worker.start());
+  workers.forEach(worker => worker.listen());
 
   const dryRunner = createDryRunner({
     actionRegistry,
