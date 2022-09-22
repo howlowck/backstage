@@ -97,6 +97,36 @@ describe('TaskWorker', () => {
     expect(workflowRunner.execute).toHaveBeenCalled();
   });
 
+  it('should be able to receive new Tasks via the eventEmitter', async () => {
+    const eventEmitter = new EventEmitter();
+    const broker = new StorageTaskBroker(storage, logger, eventEmitter);
+    const taskWorker = await TaskWorker.create({
+      logger,
+      workingDirectory,
+      integrations,
+      taskBroker: broker,
+      actionRegistry,
+      eventEmitter,
+    });
+
+    taskWorker.listen();
+
+    await broker.dispatch({
+      spec: {
+        apiVersion: 'scaffolder.backstage.io/v1beta3',
+        steps: [{ id: 'test', name: 'test', action: 'not-found-action' }],
+        output: {
+          result: '{{ steps.test.output.testOutput }}',
+        },
+        parameters: {},
+      },
+    });
+
+    await new Promise(resolve => setTimeout(resolve, 1)); // flush the stack
+
+    expect(workflowRunner.execute).toHaveBeenCalled();
+  });
+
   it('should save the output to the task', async () => {
     (workflowRunner.execute as jest.Mock).mockResolvedValue({
       output: { testOutput: 'testmockoutput' },
